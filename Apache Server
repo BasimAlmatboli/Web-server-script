@@ -1,0 +1,62 @@
+#!/bin/bash -xe
+
+# STEP 1 - Updates
+sudo yum -y update
+
+# STEP 2 - Installation and Configuration
+sudo yum -y install httpd wget curl python3
+
+# Install PHP 7.2 (if available)
+sudo yum -y install php
+
+# Install EPEL repository and stress
+sudo yum -y install epel-release stress
+
+# Install pip3 and random-cat (if not installed by default)
+sudo yum -y install python3-pip
+sudo pip3 install random-cat
+
+# Start and enable httpd service
+sudo systemctl start httpd
+sudo systemctl enable httpd
+
+# STEP 3 - Custom Random Web Page
+bgcolor=$(printf "%02x%02x%02x\n" $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+instanceId=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+
+# Download cat image and create index.php
+sudo wget -O /var/www/html/cat.gif "http://thecatapi.com/api/images/get?format=src&type=gif&api_key=8f7dc437-0b9b-47b8-a2c0-65925d593acf"
+sudo bash -c "cat << EOF > /var/www/html/index.php
+<html>
+<head>
+    <meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">
+    <meta http-equiv=\"Pragma\" content=\"no-cache\">
+    <meta http-equiv=\"Expires\" content=\"0\">
+</head>
+<body style=\"background-color:#$bgcolor;\">
+    <center><h1>Instance ID : $instanceId</h1></center><br>
+    <center><img src=\"cat.gif?nocache=<?php echo time(); ?>\"></center>
+</body>
+</html>
+EOF
+"
+
+# STEP 4 - Permissions 
+# Ensure /var/www/html directory exists and has proper permissions
+sudo mkdir -p /var/www/html
+sudo chown -R ec2-user:apache /var/www/html
+sudo chmod 2775 /var/www/html
+sudo find /var/www/html -type d -exec chmod 2775 {} \;
+sudo find /var/www/html -type f -exec chmod 0664 {} \;
+
+# STEP 5 - COWSAY
+# Install cowsay if not installed
+sudo yum -y install cowsay
+
+# Create cow MOTD script
+sudo bash -c 'echo "#!/bin/sh" > /etc/update-motd.d/40-cow'
+sudo bash -c 'echo "cowsay \"Amazon Linux 2023 AMI - Animals4Life\"" >> /etc/update-motd.d/40-cow'
+sudo chmod 755 /etc/update-motd.d/40-cow
+sudo rm -f /etc/update-motd.d/30-banner
+sudo update-motd
