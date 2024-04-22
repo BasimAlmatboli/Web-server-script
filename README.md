@@ -1,6 +1,6 @@
 # AWS EC2 Web Server Setup Script
 
-This Bash script automates the setup of a web server on an Amazon EC2 instance running Amazon Linux 2023. It installs Apache HTTP Server, fetches the instance ID from the EC2 metadata service, and displays it along with a random cat picture from the Cat API on a custom web page.
+This Bash script automates the setup of a web server on an Amazon EC2 instance running Amazon Linux 2023. It installs Apache HTTP Server or Nginx Server, fetches the instance ID from the EC2 metadata service, and displays it along with a random cat picture from the Cat API on a custom web page.
 
 ## Prerequisites
 
